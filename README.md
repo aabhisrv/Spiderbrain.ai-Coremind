@@ -17,7 +17,7 @@ reader, and the format specification.
 When a repo carries a `.spiderbrain/` folder, point the reader at it:
 
 ```
-npx @spiderbrain/read mcp
+npx spiderbrain mcp
 ```
 
 That starts an MCP server your coding agent (Claude Code, Cursor, or any MCP client)
@@ -27,10 +27,20 @@ SpiderBrain install, no configuration.
 Prefer the terminal:
 
 ```
-npx @spiderbrain/read blast src/server/health.ts   # what a change here reaches
-npx @spiderbrain/read keystones                     # the load-bearing files
-npx @spiderbrain/read map src/auth/session.ts       # what a file is + touches
+npx spiderbrain blast src/server/health.ts   # what a change here reaches
+npx spiderbrain keystones                     # the load-bearing files
+npx spiderbrain map src/auth/session.ts       # what a file is + touches
 ```
+
+## Give your own repo understanding
+
+```
+export SPIDERBRAIN_API_KEY=sb_live_...     # https://spiderbrain.ai/dashboard?tab=keys
+npx spiderbrain create
+```
+
+Fetches your scored brain and writes the source-free `.spiderbrain/` folder plus an
+`AGENTS.md` block. Commit both, and every agent that later touches the repo reads it.
 
 ## Offline vs cloud
 
@@ -42,7 +52,7 @@ npx @spiderbrain/read map src/auth/session.ts       # what a file is + touches
 
 ```
 export SPIDERBRAIN_API_KEY=sb_live_...
-npx @spiderbrain/read why src/billing/charge.ts
+npx spiderbrain why src/billing/charge.ts
 ```
 
 ## What is in the folder
@@ -55,15 +65,25 @@ Every folder carries a fingerprint in its `manifest.json`; the reader recomputes
 load, so a hand-edited or corrupted folder is flagged and the map you query is the map
 that was published.
 
-## This repo
+## This repo (three MIT packages + the spec)
 
+- [`spiderbrain/`](spiderbrain) — [`spiderbrain`](https://www.npmjs.com/package/spiderbrain),
+  the one command. A thin dispatcher over the two below.
 - [`read/`](read) — [`@spiderbrain/read`](https://www.npmjs.com/package/@spiderbrain/read),
-  the MIT reader: folder loader, blast-radius traversal, CLI, MCP server, cloud client.
+  **consume**: folder loader, blast-radius traversal, CLI, MCP server, cloud client. Zero
+  dependencies.
+- [`create/`](create) — [`@spiderbrain/create`](https://www.npmjs.com/package/@spiderbrain/create),
+  **produce**: fetch your scored brain and write the understanding set + `AGENTS.md`.
 - [`SPEC.md`](SPEC.md) — the `.spiderbrain/` public folder format.
 
-The engine that *produces* a brain (parsing and scoring) is proprietary and lives with
-SpiderBrain. What is open here is the **format** and the **reader**, so anyone can read a
-published understanding layer, or build a tool that does.
+Each scoped package is independently installable: a CI job that only publishes understanding
+needs `@spiderbrain/create` alone; an MCP config that only reads points at `@spiderbrain/read`.
+`spiderbrain` is what you type when you just want the thing.
+
+The engine that *scores* a brain (parsing and the scoring model) is proprietary and lives
+with SpiderBrain. What is open here is the **format**, the **reader**, and the **producer
+client**, so anyone can read or write a published understanding layer, or build a tool that
+does.
 
 ## License
 

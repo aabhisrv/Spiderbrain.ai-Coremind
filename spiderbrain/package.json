@@ -1,25 +1,22 @@
 {
-  "name": "@spiderbrain/read",
+  "name": "spiderbrain",
   "version": "0.1.0",
-  "description": "Use a repo's committed SpiderBrain understanding (.spiderbrain/): blast radius, keystones, and structure, offline. MCP server for AI coding agents. Cloud why-layer with a key.",
+  "description": "A committed understanding layer for your repo: give it one (create) and read it (blast radius, keystones, MCP server for AI agents). The one command; wraps @spiderbrain/read + @spiderbrain/create.",
   "type": "module",
   "license": "MIT",
   "author": "Perform Digital Pvt Ltd",
   "bin": {
-    "sb": "bin/sb.mjs",
-    "spiderbrain-read": "bin/sb.mjs"
+    "spiderbrain": "bin/spiderbrain.mjs"
   },
-  "exports": {
-    ".": "./src/core.mjs",
-    "./cli": "./src/cli.mjs",
-    "./mcp": "./src/mcp.mjs"
+  "dependencies": {
+    "@spiderbrain/read": "^0.1.0",
+    "@spiderbrain/create": "^0.1.0"
   },
   "engines": {
     "node": ">=18"
   },
   "files": [
     "bin",
-    "src",
     "README.md",
     "LICENSE"
   ],
@@ -30,18 +27,16 @@
     "mcp",
     "ai-agents",
     "repo-understanding",
-    "code-context"
+    "code-context",
+    "cli"
   ],
   "homepage": "https://spiderbrain.ai",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/aabhisrv/spiderbrain.ai.git",
-    "directory": "read"
+    "directory": "spiderbrain"
   },
   "bugs": {
     "url": "https://github.com/aabhisrv/spiderbrain.ai/issues"
-  },
-  "publishConfig": {
-    "access": "public"
   }
 }
