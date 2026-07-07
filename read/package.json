@@ -1,0 +1,45 @@
+{
+  "name": "@spiderbrain/read",
+  "version": "0.1.0",
+  "description": "Use a repo's committed SpiderBrain understanding (.spiderbrain/): blast radius, keystones, and structure, offline. MCP server for AI coding agents. Cloud why-layer with a key.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Perform Digital Pvt Ltd",
+  "bin": {
+    "sb": "bin/sb.mjs",
+    "spiderbrain-read": "bin/sb.mjs"
+  },
+  "exports": {
+    ".": "./src/core.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "spiderbrain",
+    "code-graph",
+    "blast-radius",
+    "mcp",
+    "ai-agents",
+    "repo-understanding",
+    "code-context"
+  ],
+  "homepage": "https://spiderbrain.ai",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aabhisrv/spiderbrain.ai.git",
+    "directory": "read"
+  },
+  "bugs": {
+    "url": "https://github.com/aabhisrv/spiderbrain.ai/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
