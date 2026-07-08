@@ -1,6 +1,6 @@
 {
   "name": "@spiderbrain/read",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Use a repo's committed SpiderBrain understanding (.spiderbrain/): blast radius, keystones, and structure, offline. MCP server for AI coding agents. Cloud why-layer with a key.",
   "type": "module",
   "license": "MIT",

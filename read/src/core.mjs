@@ -29,11 +29,15 @@ export function parseStructure(raw) {
   return nodes
 }
 
-/** Integrity read: the committed fingerprint must match a fresh hash of the bytes. */
+/** Integrity read: the committed fingerprint must match a fresh hash of the bytes.
+ *  A CRLF-converted copy (git autocrlf on Windows checkouts) is re-checked with
+ *  normalized line endings: an EOL conversion is not tamper, so it still verifies. */
 export function integrityOf(structureText, manifest) {
   if (!manifest || !manifest.graphFingerprint) return 'unknown'
-  const fresh = createHash('sha256').update(structureText).digest('hex').slice(0, manifest.graphFingerprint.length)
-  return fresh === manifest.graphFingerprint ? 'verified' : 'MISMATCH'
+  const fp = (s) => createHash('sha256').update(s).digest('hex').slice(0, manifest.graphFingerprint.length)
+  if (fp(structureText) === manifest.graphFingerprint) return 'verified'
+  if (structureText.includes('\r\n') && fp(structureText.replace(/\r\n/g, '\n')) === manifest.graphFingerprint) return 'verified'
+  return 'MISMATCH'
 }
 
 /** Load the folder into an in-memory graph. Builds dependedOnBy by inverting
@@ -176,9 +180,12 @@ export function verify(root, opts = {}) {
     if (integ === 'MISMATCH') problems.push('graphFingerprint does not match structure.ndjson (hand-edited or corrupted)')
     for (const [name, hash] of Object.entries(manifest.fileHashes || {})) {
       try {
-        const fresh = createHash('sha256').update(readFileSync(join(dir, name), 'utf8')).digest('hex')
-        files[name] = fresh === hash ? 'ok' : 'mismatch'
-        if (files[name] === 'mismatch') problems.push(`${name} does not match its recorded hash`)
+        const text = readFileSync(join(dir, name), 'utf8')
+        const sha = (s) => createHash('sha256').update(s).digest('hex')
+        // EOL-normalized retry: a git autocrlf checkout is not tamper.
+        const ok = sha(text) === hash || (text.includes('\r\n') && sha(text.replace(/\r\n/g, '\n')) === hash)
+        files[name] = ok ? 'ok' : 'mismatch'
+        if (!ok) problems.push(`${name} does not match its recorded hash`)
       } catch { files[name] = 'missing'; problems.push(`${name} is missing`) }
     }
   }

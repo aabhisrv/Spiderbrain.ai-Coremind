@@ -55,9 +55,16 @@ function changedFromGit(rootDir, staged) {
   return r.stdout.split('\n').map((s) => s.trim()).filter(Boolean)
 }
 
-/** Load the committed brain, else fall back to the public registry (unofficial). */
+/** Load the committed brain, else fall back to the public registry (unofficial).
+ *  Only a MISSING folder falls back - a present-but-corrupt folder must surface as
+ *  corruption, never be silently papered over with a registry copy. */
 async function loadWithFallback(rootDir, json) {
-  try { return loadBrain(rootDir) } catch { /* fall through to the registry */ }
+  try { return loadBrain(rootDir) } catch (e) {
+    if (!String(e && e.message).startsWith('no understanding found')) {
+      console.error(`corrupt .spiderbrain/ folder: ${e.message}`)
+      return 'corrupt'
+    }
+  }
   const reg = await fetchRegistryBrainFor(rootDir)
   if (reg) { if (!json) console.error(REGISTRY_NOTICE(reg)); return reg }
   return null
@@ -88,6 +95,10 @@ export async function runCli(argv) {
   }
 
   const b = await loadWithFallback(rootDir, json)
+  if (b === 'corrupt') {
+    if (json) process.stdout.write(JSON.stringify({ error: 'corrupt_folder', hint: 'regenerate with: npx spiderbrain create' }) + '\n')
+    return 1
+  }
   if (!b) {
     if (json) process.stdout.write(JSON.stringify({ error: 'no_understanding', hint: 'npx spiderbrain create' }) + '\n')
     else console.error(FUNNEL)

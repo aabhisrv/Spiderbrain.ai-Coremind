@@ -23,8 +23,15 @@ When a repo has a `.spiderbrain/` folder, any agent or developer can use it offl
 ```
 npx spiderbrain mcp                 # an MCP server for Claude Code / Cursor
 npx spiderbrain blast src/db.ts     # what a change here reaches
+npx spiderbrain impact              # what your current git diff reaches
 npx spiderbrain keystones           # the load-bearing files
+npx spiderbrain path a.ts b.ts      # how one file reaches another
+npx spiderbrain verify              # folder untampered + current? (CI gate)
 ```
+
+Every command takes `--json` (exit codes: 0 ok, 1 failed, 2 usage, 3 no understanding).
+No committed folder? The reader falls back to the public registry when the repo's
+origin has an unofficial brain there.
 
 ## The pieces
 

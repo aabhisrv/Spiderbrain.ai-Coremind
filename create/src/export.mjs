@@ -141,6 +141,10 @@ export function buildUnderstanding(brain, opts = {}) {
 
   const out = { 'structure.ndjson': structureNdjson, 'AGENTS.block.md': agentsBlock, 'manifest.json': JSON.stringify(manifest, null, 2) + '\n' }
   if (scoresNdjson) out['scores.ndjson'] = scoresNdjson
+  // Line-ending armor: without this, git's autocrlf (the Windows default) rewrites
+  // these files to CRLF on checkout and the fingerprint/hashes no longer match the
+  // working-tree bytes. `-text` opts the whole folder out of any EOL conversion.
+  out['.gitattributes'] = '# SpiderBrain understanding set: byte-exact files, never EOL-converted.\n* -text\n'
   return { files: out, manifest }
 }
 

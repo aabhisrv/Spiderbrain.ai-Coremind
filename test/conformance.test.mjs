@@ -179,6 +179,32 @@ test('cli: verify exit codes (0 ok, 1 stale, 0 with --allow-stale)', () => {
   assert.equal(run(['verify', '--allow-stale'], root).status, 0)
 })
 
+test('folder ships line-ending armor (.gitattributes -text)', () => {
+  const built = buildUnderstanding(FIXTURE, { repo: 'acme/mini', commit: COMMIT })
+  assert.ok(built.files['.gitattributes'].includes('* -text'))
+})
+
+test('verify + integrity tolerate a CRLF-converted checkout (git autocrlf)', () => {
+  const { root } = freshFolder()
+  // simulate what autocrlf=true does to the working tree on Windows
+  for (const name of ['structure.ndjson', 'AGENTS.block.md']) {
+    const p = join(root, '.spiderbrain', name)
+    writeFileSync(p, readFileSync(p, 'utf8').replace(/\n/g, '\r\n'))
+  }
+  const v = verify(root)
+  assert.equal(v.ok, true, v.problems.join('; '))
+  assert.equal(loadBrain(root).integrity, 'verified')
+})
+
+test('cli: a corrupt folder exits 1 and is never masked by the registry', () => {
+  const { root } = freshFolder()
+  const sPath = join(root, '.spiderbrain', 'structure.ndjson')
+  writeFileSync(sPath, 'this is not ndjson {{{\n' + readFileSync(sPath, 'utf8'))
+  const r = run(['keystones', '--json'], root)
+  assert.equal(r.status, 1)
+  assert.ok((r.stderr || '').includes('corrupt'))
+})
+
 test('cli: unknown file exits 1, unknown command exits 2, no folder exits 3', () => {
   const { root } = freshFolder()
   assert.equal(run(['blast', 'nope.ts'], root).status, 1)
