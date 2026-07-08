@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "variant": "public",
+  "privacy": "plain-paths",
+  "engineVersion": "v5",
+  "scoredFrom": "e60c1d7df74838fd400713d0d16c75e96e7e310a",
+  "repo": {
+    "name": "aabhisrv/spiderbrain.ai",
+    "commit": "e60c1d7df74838fd400713d0d16c75e96e7e310a"
+  },
+  "counts": {
+    "files": 35,
+    "edges": 19,
+    "clusters": 0,
+    "masters": 0
+  },
+  "graphFingerprint": "690da56ebc9813a3",
+  "fileHashes": {
+    "structure.ndjson": "690da56ebc9813a352dbd9a14c756ad7e5f9e9bfa797263539efa61507bda562",
+    "AGENTS.block.md": "2d2e452a2a1b755e98cd3f6dcea42015f79fb404ca1ff28d23990c6fc6f6df1e"
+  },
+  "benchmark": {
+    "standard": "context-trust-level",
+    "url": "https://contextbenchmark.com",
+    "note": "CTL is measured, never hardcoded; see the published run."
+  },
+  "ownership": {
+    "owner": "repo",
+    "license": "inherits-repo",
+    "generator": "spiderbrain"
+  },
+  "attribution": null
+}

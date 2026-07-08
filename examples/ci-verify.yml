@@ -1,0 +1,18 @@
+# Freshness gate: fail the build when the committed .spiderbrain/ folder has been
+# hand-edited, corrupted, or (strict mode) left behind by newer commits.
+# Drop into .github/workflows/ in any repo that carries an understanding layer.
+name: spiderbrain-verify
+
+on: [push, pull_request]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      # --allow-stale checks bytes only (tamper/corruption). Remove it to also
+      # require the brain to be rescored at the current HEAD before merging.
+      - run: npx --yes spiderbrain verify --allow-stale

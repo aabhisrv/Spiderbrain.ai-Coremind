@@ -4,6 +4,7 @@ import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { buildUnderstanding, mergeAgents } from './export.mjs'
 import { fetchBrain } from './fetch.mjs'
+import { readHeadCommit, readOriginOwnerRepo } from './gitinfo.mjs'
 
 const HELP = `spiderbrain create: give a repo its committed understanding layer
 
@@ -13,6 +14,7 @@ const HELP = `spiderbrain create: give a repo its committed understanding layer
   --root     the repo directory to write into (default: current directory)
   --private  include weighted scores (for a PRIVATE in-repo brain only)
   --agents   the agent context file to merge into (default: AGENTS.md)
+  --commit   commit sha to stamp as scoredFrom (default: read from .git HEAD)
 
   Needs SPIDERBRAIN_API_KEY. Writes .spiderbrain/ and merges an AGENTS block.
 `
@@ -31,8 +33,14 @@ export async function runCreate(argv) {
   try { ({ brain, meta } = await fetchBrain(brainRef)) }
   catch (e) { console.error(`error: ${e.message}`); return 1 }
 
+  // Stamp real provenance: the repo's origin owner/repo and its HEAD commit, read
+  // from .git (no git binary needed). Explicit flags/hosted names still win.
+  const origin = readOriginOwnerRepo(root)
+  const commit = opt(args, 'commit', readHeadCommit(root) || '')
+  const repoName = origin ? `${origin.owner}/${origin.repo}` : meta.name
+
   let built
-  try { built = buildUnderstanding(brain, { private: isPrivate, repo: meta.name }) }
+  try { built = buildUnderstanding(brain, { private: isPrivate, repo: repoName, commit }) }
   catch (e) { console.error(`error: ${e.message}`); return 1 }
 
   const dir = join(root, '.spiderbrain')

@@ -1,0 +1,35 @@
+# Conformance CI: the determinism / leak-guard / integrity guarantees in SPEC.md,
+# proven on every push across supported Node versions. The badge on the README is
+# this workflow.
+name: conformance
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: node --test "test/conformance.test.mjs"
+
+  verify-own-brain:
+    # Dogfood gate: this repo's committed .spiderbrain/ must verify against its bytes.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node read/bin/sb.mjs verify --allow-stale
+      - run: node read/bin/sb.mjs keystones --json

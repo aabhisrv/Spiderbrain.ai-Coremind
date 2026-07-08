@@ -1,6 +1,6 @@
 {
   "name": "@spiderbrain/read",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Use a repo's committed SpiderBrain understanding (.spiderbrain/): blast radius, keystones, and structure, offline. MCP server for AI coding agents. Cloud why-layer with a key.",
   "type": "module",
   "license": "MIT",
@@ -10,9 +10,14 @@
     "spiderbrain-read": "bin/sb.mjs"
   },
   "exports": {
-    ".": "./src/core.mjs",
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./src/core.mjs"
+    },
     "./cli": "./src/cli.mjs",
-    "./mcp": "./src/mcp.mjs"
+    "./mcp": "./src/mcp.mjs",
+    "./git": "./src/git.mjs",
+    "./registry": "./src/registry.mjs"
   },
   "engines": {
     "node": ">=18"
@@ -20,6 +25,7 @@
   "files": [
     "bin",
     "src",
+    "index.d.ts",
     "README.md",
     "LICENSE"
   ],
@@ -43,5 +49,6 @@
   },
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "types": "./index.d.ts"
 }

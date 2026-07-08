@@ -1,0 +1,41 @@
+# PR blast radius: comment every pull request with what the change set reaches and
+# whether it touches a keystone, computed deterministically from the committed
+# .spiderbrain/ folder. No account, no key - the viral surface every reviewer sees.
+name: spiderbrain-impact
+
+on: [pull_request]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  impact:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: compute impact
+        id: impact
+        run: |
+          FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          echo "$FILES" | xargs npx --yes spiderbrain impact --json > impact.json
+          echo "count=$(node -p "require('./impact.json').reachedCount")" >> "$GITHUB_OUTPUT"
+      - name: comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const r = require('./impact.json')
+            const ks = r.keystonesTouched.length
+              ? `\n\n**Keystones touched:** ${r.keystonesTouched.map(k => '`' + k + '`').join(', ')}`
+              : ''
+            const rows = r.changed.map(c =>
+              `| \`${c.path}\` | ${c.found ? c.reaches : 'new'} ${c.keystone ? ' **keystone**' : ''} |`).join('\n')
+            await github.rest.issues.createComment({
+              ...context.repo,
+              issue_number: context.issue.number,
+              body: `### SpiderBrain impact\n\nThis change reaches **${r.reachedCount}** other file(s).${ks}\n\n| changed file | reaches |\n|---|---|\n${rows}\n\n<sub>Computed deterministically from the committed \`.spiderbrain/\` folder - same repo, same diff, same answer.</sub>`,
+            })

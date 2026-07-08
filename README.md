@@ -1,5 +1,7 @@
 # SpiderBrain: the understanding layer for your repo
 
+[![conformance](https://github.com/aabhisrv/spiderbrain.ai/actions/workflows/ci.yml/badge.svg)](https://github.com/aabhisrv/spiderbrain.ai/actions/workflows/ci.yml)
+
 A repo tells an AI agent *what* the code is. It never tells it what **matters**, what a
 change **reaches**, or **why** anything was built the way it was. So every agent
 re-derives the structure from scratch, every session, and gets it a little wrong.
@@ -21,15 +23,51 @@ npx spiderbrain mcp
 ```
 
 That starts an MCP server your coding agent (Claude Code, Cursor, or any MCP client)
-can query. Tools: `sb_blast`, `sb_keystones`, `sb_map`, `sb_ask`. No account, no
-SpiderBrain install, no configuration.
+can query. Tools: `sb_blast`, `sb_impact`, `sb_path`, `sb_keystones`, `sb_map`,
+`sb_ask`. No account, no SpiderBrain install, no configuration. A real session
+transcript is in [examples/agent-session.md](examples/agent-session.md).
 
 Prefer the terminal:
 
 ```
 npx spiderbrain blast src/server/health.ts   # what a change here reaches
+npx spiderbrain impact                        # what YOUR CURRENT DIFF reaches
 npx spiderbrain keystones                     # the load-bearing files
 npx spiderbrain map src/auth/session.ts       # what a file is + touches
+npx spiderbrain path src/a.ts src/b.ts        # how one file reaches another
+npx spiderbrain verify                        # folder untampered + current?
+```
+
+## Agents are first-class
+
+Every command takes `--json` and emits one machine-readable object, and exit codes
+are part of the contract: `0` ok, `1` check failed, `2` usage, `3` no understanding.
+CI can gate on them:
+
+```
+npx spiderbrain impact --fail-over 200   # fail a PR whose blast exceeds 200 files
+npx spiderbrain verify                   # fail a build whose folder is stale or edited
+```
+
+Ready-made workflows - a PR blast-radius comment and a freshness gate - are in
+[examples/](examples).
+
+## No folder? Registry fallback
+
+When a repo carries no `.spiderbrain/` folder, the reader checks the public
+SpiderBrain registry for an **unofficial** brain of the same repo (matched by the
+`origin` remote, clearly labeled, fingerprint-verified). The committed folder always
+wins when present; maintainers can publish the official one with `npx spiderbrain create`.
+
+## This repo eats its own dogfood
+
+This repository carries its own committed [`.spiderbrain/`](.spiderbrain) folder,
+derived from its real import graph (`node scripts/build-own-brain.mjs`, regenerated
+deterministically, verified in CI). Clone it and ask it about itself:
+
+```
+npx spiderbrain keystones      # read/src/core.mjs is the load-bearing file
+npx spiderbrain verify         # the committed fingerprint matches the bytes
 ```
 
 ## Give your own repo understanding

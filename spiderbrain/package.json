@@ -1,6 +1,6 @@
 {
   "name": "spiderbrain",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A committed understanding layer for your repo: give it one (create) and read it (blast radius, keystones, MCP server for AI agents). The one command; wraps @spiderbrain/read + @spiderbrain/create.",
   "type": "module",
   "license": "MIT",
@@ -9,8 +9,8 @@
     "spiderbrain": "bin/spiderbrain.mjs"
   },
   "dependencies": {
-    "@spiderbrain/read": "^0.1.0",
-    "@spiderbrain/create": "^0.1.0"
+    "@spiderbrain/read": "^0.2.0",
+    "@spiderbrain/create": "^0.2.0"
   },
   "engines": {
     "node": ">=18"

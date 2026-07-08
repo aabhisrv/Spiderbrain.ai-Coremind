@@ -1,0 +1,19 @@
+{
+  "nodes": {
+    "src/util.mjs":   { "kind": "code", "cluster": "src", "blastRadius": 4, "dependsOn": [] },
+    "src/core.mjs":   { "kind": "code", "cluster": "src", "blastRadius": 3, "dependsOn": ["src/util.mjs"], "webscore": 0.91, "spikescore": 0.4 },
+    "src/api.mjs":    { "kind": "code", "cluster": "src", "blastRadius": 2, "dependsOn": ["src/core.mjs", "src/util.mjs"] },
+    "src/index.mjs":  { "kind": "code", "role": "barrel", "cluster": "src", "blastRadius": 1, "dependsOn": ["src/api.mjs", "src/core.mjs"] },
+    "src/app.mjs":    { "kind": "code", "cluster": "src", "blastRadius": 0, "dependsOn": ["src/index.mjs"] },
+    "docs/readme.md": { "kind": "doc",  "cluster": "docs", "blastRadius": 0, "dependsOn": [] }
+  },
+  "edges": [
+    ["src/core.mjs", "src/util.mjs"],
+    ["src/api.mjs", "src/core.mjs"],
+    ["src/api.mjs", "src/util.mjs"],
+    ["src/index.mjs", "src/api.mjs"],
+    ["src/index.mjs", "src/core.mjs"],
+    ["src/app.mjs", "src/index.mjs"]
+  ],
+  "stats": { "edgeCount": 6 }
+}

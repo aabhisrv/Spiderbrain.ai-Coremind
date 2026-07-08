@@ -1,0 +1,32 @@
+# Publish a package to npm with provenance (the npm page shows a verified link back
+# to this repo + the exact workflow run). Manual trigger; pick the package.
+# Requires the NPM_TOKEN repository secret (an npm Automation token).
+name: publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: which package to publish
+        required: true
+        type: choice
+        options: [read, create, spiderbrain]
+
+permissions:
+  contents: read
+  id-token: write # npm provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+      - run: node --test "test/conformance.test.mjs"
+      - run: npm publish --provenance --access public
+        working-directory: ${{ inputs.package }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

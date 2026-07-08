@@ -1,6 +1,6 @@
 {
   "name": "@spiderbrain/create",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Give a repo its committed SpiderBrain understanding layer: fetch your scored brain and write a source-free .spiderbrain/ folder + AGENTS.md block. For CI and the terminal.",
   "type": "module",
   "license": "MIT",
