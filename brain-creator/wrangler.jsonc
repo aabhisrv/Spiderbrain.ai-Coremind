@@ -1,0 +1,18 @@
+{
+  // spiderbrain-brain-creator — serves the registry's brain DATA (the agent plane)
+  // from R2: /brains/<owner>/<repo>/{structure.ndjson,manifest.json,provenance.json,
+  // brain.json,graph.json,AGENTS.block.md}, plus /brains/index.json and
+  // /brains/transparency-log.json. The Next site serves the HTML pages; this serves
+  // the machine-readable twins. Deployed to its workers.dev URL for now; routing
+  // spiderbrain.ai/brains/*.<ext> here is a production step.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "spiderbrain-brain-creator",
+  "account_id": "89d110e7425397852263daa0d2420545",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-05-18",
+  "workers_dev": true,
+  "observability": { "enabled": true },
+  "r2_buckets": [
+    { "binding": "BRAINS", "bucket_name": "spiderbrain-brains" }
+  ]
+}
