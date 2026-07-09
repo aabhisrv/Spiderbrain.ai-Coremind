@@ -53,9 +53,15 @@ export function graphSubset(nodes, limit = 80) {
   return { nodes: gnodes, edges, clusters: clusters.length };
 }
 
+const one = (x) => (Number.isFinite(x) ? Math.round(x * 10) / 10 : null);
+const pct = (x) => (Number.isFinite(x) ? Math.round(x * 100) : null);
+
 /** Build the display record the registry pages render, from the SAME public structure.
- *  meta = { owner, repo, tier, lang, featured }; counts/fp/sha from manifest; builtAt from provenance/brain. */
-export function displayRecord({ meta, nodes, manifest, builtAt }) {
+ *  meta = { owner, repo, tier, lang, featured }; counts/fp/sha from manifest; builtAt from provenance/brain.
+ *  rawNodes (optional) = the FULL scored synganglion nodes (id -> node). We render those richer scores on
+ *  OUR platform (the repo is public; the moat is the engine, not the numbers) — they never enter the
+ *  source-free structure.ndjson that the agent plane / npx serve. This is the public-vs-full-brain funnel. */
+export function displayRecord({ meta, nodes, manifest, builtAt, rawNodes }) {
   // Only CODE nodes are meaningful hotspots/keystones — config/docs clusters (kind
   // 'content'/'config') have per-cluster masters like .changeset/config.json that are
   // noise for "what breaks" and "where to start".
@@ -83,14 +89,26 @@ export function displayRecord({ meta, nodes, manifest, builtAt }) {
     .filter((n) => (n.blastRadius || 0) > 0 || indeg.get(n.id))
     .sort((a, b) => byBlast(a, b) || (indeg.get(b.id) || 0) - (indeg.get(a.id) || 0))
     .slice(0, 24)
-    .map((n) => ({
-      file: n.id,
-      blast: n.blastRadius || 0,
-      out: (n.dependsOn || []).length,
-      in: indeg.get(n.id) || 0,
-      cluster: n.cluster || '',
-      master: !!n.isMaster,
-    }));
+    .map((n) => {
+      const rec = {
+        file: n.id,
+        blast: n.blastRadius || 0,
+        out: (n.dependsOn || []).length,
+        in: indeg.get(n.id) || 0,
+        cluster: n.cluster || '',
+        master: !!n.isMaster,
+      };
+      // FULL-brain scores (only when we have the raw scored graph): rendered on our platform.
+      const rn = rawNodes && rawNodes[n.id];
+      if (rn) {
+        rec.webscore = one(rn.webscore);
+        rec.semantic = pct(rn.semantic01);
+        rec.constitutive = pct(rn.constitutive01);
+        rec.spike = one(rn.spikescore);
+      }
+      return rec;
+    });
+  const scored = rawNodes ? topFiles.some((t) => t.webscore != null) : undefined;
   return {
     owner: meta.owner,
     repo: meta.repo,
@@ -104,13 +122,14 @@ export function displayRecord({ meta, nodes, manifest, builtAt }) {
     codeFiles: code.length,
     impactReach: maxBlast, // the single most far-reaching file's blast radius (a real, meaningful number)
     topHotspot,
-    topFiles,
     freshness: 100, // just built; the pipeline sets this from HEAD-vs-build age later
     builtAt: builtAt || null,
     sha: (manifest.scoredFrom ? String(manifest.scoredFrom).slice(0, 7) : 'unknown'),
     graphFingerprint: manifest.graphFingerprint,
+    scored: scored || false, // whether topFiles carry full-brain scores
     hotspots,
     startHere,
+    topFiles,
   };
 }
 
@@ -135,7 +154,7 @@ export function adapt({ brainDir, owner, repo, out, tier, lang, commit }) {
   writeFileSync(join(dir, 'provenance.json'), JSON.stringify(provenance, null, 2) + '\n');
 
   const nodes = files['structure.ndjson'].trim().split('\n').map((l) => JSON.parse(l));
-  const display = displayRecord({ meta: { owner, repo, tier, lang, featured: false }, nodes, manifest, builtAt: syn.generatedAt });
+  const display = displayRecord({ meta: { owner, repo, tier, lang, featured: false }, nodes, manifest, builtAt: syn.generatedAt, rawNodes: syn.nodes });
   writeFileSync(join(dir, 'brain.json'), JSON.stringify(display, null, 2) + '\n');
   writeFileSync(join(dir, 'graph.json'), JSON.stringify(graphSubset(nodes)) + '\n');
 

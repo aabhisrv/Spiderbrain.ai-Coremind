@@ -33,6 +33,15 @@ for (const owner of dirsIn(PUBLIC_OUT)) {
       manifest,
       builtAt: prov.generatedAt || prev.builtAt,
     });
+    // preserve full-brain scores captured at build time (reindex has no scored graph)
+    if (prev.topFiles && display.topFiles) {
+      const sc = new Map(prev.topFiles.map((t) => [t.file, t]));
+      for (const t of display.topFiles) {
+        const p = sc.get(t.file);
+        if (p && p.webscore != null) { t.webscore = p.webscore; t.semantic = p.semantic; t.constitutive = p.constitutive; t.spike = p.spike; }
+      }
+      display.scored = display.topFiles.some((t) => t.webscore != null);
+    }
     writeFileSync(bj, JSON.stringify(display, null, 2) + '\n');
     writeFileSync(join(dir, 'graph.json'), JSON.stringify(graphSubset(nodes)) + '\n');
     brains.push(display);
