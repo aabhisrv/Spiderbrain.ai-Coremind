@@ -73,6 +73,24 @@ export function displayRecord({ meta, nodes, manifest, builtAt }) {
   const topCode = code.filter((n) => (n.blastRadius || 0) > 0 && !hotspotIds.has(n.id)).sort(byBlast).map((n) => n.id);
   const startHere = [...new Set([...masters, ...topCode])].slice(0, 5);
   const topHotspot = hotspots[0]?.file || (code[0] && code[0].id) || '';
+
+  // in-degree: how many files depend ON this one (dependents / upward impact)
+  const indeg = new Map();
+  for (const n of nodes) for (const d of (n.dependsOn || [])) indeg.set(d, (indeg.get(d) || 0) + 1);
+  // the dependency table: top code files by reach, with structure metrics (NO scores — those
+  // are the private layer, stripped by the source-free guard).
+  const topFiles = code
+    .filter((n) => (n.blastRadius || 0) > 0 || indeg.get(n.id))
+    .sort((a, b) => byBlast(a, b) || (indeg.get(b.id) || 0) - (indeg.get(a.id) || 0))
+    .slice(0, 24)
+    .map((n) => ({
+      file: n.id,
+      blast: n.blastRadius || 0,
+      out: (n.dependsOn || []).length,
+      in: indeg.get(n.id) || 0,
+      cluster: n.cluster || '',
+      master: !!n.isMaster,
+    }));
   return {
     owner: meta.owner,
     repo: meta.repo,
@@ -81,9 +99,12 @@ export function displayRecord({ meta, nodes, manifest, builtAt }) {
     featured: !!meta.featured,
     nodes: manifest.counts.files,
     edges: manifest.counts.edges,
+    clusters: manifest.counts.clusters || 0,
+    masters: manifest.counts.masters || 0,
     codeFiles: code.length,
     impactReach: maxBlast, // the single most far-reaching file's blast radius (a real, meaningful number)
     topHotspot,
+    topFiles,
     freshness: 100, // just built; the pipeline sets this from HEAD-vs-build age later
     builtAt: builtAt || null,
     sha: (manifest.scoredFrom ? String(manifest.scoredFrom).slice(0, 7) : 'unknown'),
