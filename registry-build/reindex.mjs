@@ -40,6 +40,31 @@ for (const owner of dirsIn(PUBLIC_OUT)) {
   }
 }
 
+// Apply pdad-approved tier overrides (brain_overrides, public-readable via the anon key).
+// An approved claim in the admin flips a brain to Official here on the next rebuild.
+const SUPABASE_URL = 'https://vrloeeqmvbchxqnckuxy.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZybG9lZXFtdmJjaHhxbmNrdXh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyMzgwNDAsImV4cCI6MjA5NTgxNDA0MH0.Piavmozyx2vV_RGfO3g0CgPQc92ATQPCG2gK-i0r4c4';
+
+async function applyOverrides() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/brain_overrides?select=owner,repo,tier`, {
+      headers: { apikey: SUPABASE_ANON, Authorization: 'Bearer ' + SUPABASE_ANON },
+    });
+    if (!res.ok) return 0;
+    const rows = await res.json();
+    const map = new Map(rows.map((r) => [`${r.owner}/${r.repo}`, r.tier]));
+    let n = 0;
+    for (const b of brains) {
+      const t = map.get(`${b.owner}/${b.repo}`);
+      if (t && t !== b.tier) { b.tier = t; n++; }
+    }
+    return n;
+  } catch { return -1; } // offline / table missing — skip silently
+}
+
+const applied = await applyOverrides();
+if (applied > 0) console.log(`applied ${applied} pdad tier override(s)`);
+
 mkdirSync(GEN_DIR, { recursive: true });
 // stable order: featured first, then by node count desc
 brains.sort((a, b) => (b.featured - a.featured) || (b.nodes - a.nodes));
