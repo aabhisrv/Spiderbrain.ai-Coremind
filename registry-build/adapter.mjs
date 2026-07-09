@@ -26,6 +26,33 @@ const SEV = (blast, max) => (blast >= max * 0.5 ? 'high' : blast >= max * 0.2 ? 
 
 const byBlast = (a, b) => (b.blastRadius || 0) - (a.blastRadius || 0) || (a.id < b.id ? -1 : 1);
 
+/** A renderable subgraph: the top-N code nodes by blast radius plus the dependency
+ *  edges among them. Deterministic (sorted). Small enough to lay out + draw client-side. */
+export function graphSubset(nodes, limit = 80) {
+  const code = nodes.filter((n) => n.kind === 'code');
+  const top = code.slice().sort(byBlast).slice(0, limit);
+  const idx = new Map(top.map((n, i) => [n.id, i]));
+  const clusters = [...new Set(top.map((n) => n.cluster || ''))].sort();
+  const cIndex = new Map(clusters.map((c, i) => [c, i]));
+  const maxBlast = top.reduce((m, n) => Math.max(m, n.blastRadius || 0), 0) || 1;
+  const gnodes = top.map((n) => ({
+    id: n.id,
+    label: n.id.split('/').pop(),
+    c: cIndex.get(n.cluster || ''),
+    b: Math.round(((n.blastRadius || 0) / maxBlast) * 100) / 100, // 0..1
+    m: !!n.isMaster,
+  }));
+  const edges = [];
+  for (const n of top) {
+    const s = idx.get(n.id);
+    for (const dep of (n.dependsOn || [])) {
+      const t = idx.get(dep);
+      if (t !== undefined && t !== s) edges.push([s, t]);
+    }
+  }
+  return { nodes: gnodes, edges, clusters: clusters.length };
+}
+
 /** Build the display record the registry pages render, from the SAME public structure.
  *  meta = { owner, repo, tier, lang, featured }; counts/fp/sha from manifest; builtAt from provenance/brain. */
 export function displayRecord({ meta, nodes, manifest, builtAt }) {
@@ -89,6 +116,7 @@ export function adapt({ brainDir, owner, repo, out, tier, lang, commit }) {
   const nodes = files['structure.ndjson'].trim().split('\n').map((l) => JSON.parse(l));
   const display = displayRecord({ meta: { owner, repo, tier, lang, featured: false }, nodes, manifest, builtAt: syn.generatedAt });
   writeFileSync(join(dir, 'brain.json'), JSON.stringify(display, null, 2) + '\n');
+  writeFileSync(join(dir, 'graph.json'), JSON.stringify(graphSubset(nodes)) + '\n');
 
   return { display, manifest };
 }

@@ -4,7 +4,7 @@
 
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { displayRecord } from './adapter.mjs';
+import { displayRecord, graphSubset } from './adapter.mjs';
 
 const HERE = resolve(process.argv[1], '..');
 const WEB = resolve(HERE, '../../../Spiderbrain-website');
@@ -34,6 +34,7 @@ for (const owner of dirsIn(PUBLIC_OUT)) {
       builtAt: prov.generatedAt || prev.builtAt,
     });
     writeFileSync(bj, JSON.stringify(display, null, 2) + '\n');
+    writeFileSync(join(dir, 'graph.json'), JSON.stringify(graphSubset(nodes)) + '\n');
     brains.push(display);
     console.log(`✓ ${owner}/${repo}: ${display.nodes} files (${display.codeFiles} code), keystones: ${display.startHere.slice(0, 3).join(', ')}`);
   }
