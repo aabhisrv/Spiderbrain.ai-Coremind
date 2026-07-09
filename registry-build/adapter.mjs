@@ -80,6 +80,19 @@ export function displayRecord({ meta, nodes, manifest, builtAt, rawNodes }) {
   const startHere = [...new Set([...masters, ...topCode])].slice(0, 5);
   const topHotspot = hotspots[0]?.file || (code[0] && code[0].id) || '';
 
+  // per-cluster sizes for the treemap / radial viz (display-only, not fingerprinted)
+  const cm = new Map();
+  for (const n of nodes) {
+    const c = n.cluster || '';
+    if (!c) continue;
+    const e = cm.get(c) || { name: c, files: 0, code: 0, reach: 0 };
+    e.files++;
+    if (n.kind === 'code') e.code++;
+    e.reach = Math.max(e.reach, n.blastRadius || 0);
+    cm.set(c, e);
+  }
+  const clusterSizes = [...cm.values()].sort((a, b) => b.files - a.files);
+
   // in-degree: how many files depend ON this one (dependents / upward impact)
   const indeg = new Map();
   for (const n of nodes) for (const d of (n.dependsOn || [])) indeg.set(d, (indeg.get(d) || 0) + 1);
@@ -127,6 +140,7 @@ export function displayRecord({ meta, nodes, manifest, builtAt, rawNodes }) {
     sha: (manifest.scoredFrom ? String(manifest.scoredFrom).slice(0, 7) : 'unknown'),
     graphFingerprint: manifest.graphFingerprint,
     scored: scored || false, // whether topFiles carry full-brain scores
+    clusterSizes,
     hotspots,
     startHere,
     topFiles,
