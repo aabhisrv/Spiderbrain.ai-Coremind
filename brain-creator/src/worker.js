@@ -76,8 +76,10 @@ export default {
       if (r.status === 404) return json({ error: 'no such job' }, 404);
       const j = await r.json();
       if (j.status === 'done') {
-        const free = url.searchParams.get('tier') !== 'full';   // full requires a paid unlock (not yet wired)
-        return json({ status: 'done', result: free ? stripToFree(j.result) : j.result });
+        // This PUBLIC proxy ALWAYS strips to the free tier. The paid full report (with
+        // DeepWeave scores) is fetched server-side by sbpw straight from KVM8 with the
+        // parse key, only after a verified $9 payment — never exposed through this route.
+        return json({ status: 'done', result: stripToFree(j.result) });
       }
       return json({ status: j.status, ...(j.error ? { error: j.error } : {}) });
     }
