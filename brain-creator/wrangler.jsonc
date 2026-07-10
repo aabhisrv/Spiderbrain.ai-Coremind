@@ -18,5 +18,8 @@
   },
   "r2_buckets": [
     { "binding": "BRAINS", "bucket_name": "spiderbrain-brains" }
-  ]
+  ],
+  // Shared rate-limit KV (same namespace as sbpw, same account) — throttles the
+  // unauthenticated /scan/start so it can't be used to flood KVM8 or burn the GitHub quota.
+  "kv_namespaces": [{ "binding": "RATE_LIMIT", "id": "106ea794265049ff8e28cce50f9d636e" }]
 }

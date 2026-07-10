@@ -49,15 +49,31 @@ async function kvm8(path, env, init) {
   return r;
 }
 
+// Per-IP throttle for the unauthenticated /scan/start (each call kicks a KVM8 parse +
+// a GitHub API hit). Fails OPEN if KV is missing so a binding glitch never blocks scans.
+async function scanRateLimited(request, env, max = 20, ttl = 3600) {
+  if (!env.RATE_LIMIT) return false;
+  const ip = request.headers.get('cf-connecting-ip') || 'noip';
+  const key = `rl:scan:${ip}`;
+  try {
+    const cur = parseInt((await env.RATE_LIMIT.get(key)) || '0', 10);
+    if (cur >= max) return true;
+    await env.RATE_LIMIT.put(key, String(cur + 1), { expirationTtl: ttl });
+    return false;
+  } catch { return false; }
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { headers: CORS });
     const url = new URL(request.url);
-    const path = decodeURIComponent(url.pathname);
+    let path;
+    try { path = decodeURIComponent(url.pathname); } catch { return new Response('bad request', { status: 400 }); }
 
     // ── compat scan proxy ──────────────────────────────────────────────
     if (path === '/scan/start' && request.method === 'POST') {
       if (!env.REGISTRY_PARSE_URL || !env.REGISTRY_PARSE_KEY) return json({ error: 'scan not configured' }, 503);
+      if (await scanRateLimited(request, env)) return json({ error: 'Too many scans from your network. Please wait a bit and retry.' }, 429);
       let b; try { b = await request.json(); } catch { return json({ error: 'bad json' }, 400); }
       const owner = String(b.owner || '').trim(), repo = String(b.repo || '').trim();
       const g = await gate1(owner, repo, env);
