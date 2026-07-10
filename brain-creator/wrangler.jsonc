@@ -12,6 +12,10 @@
   "compatibility_date": "2026-05-18",
   "workers_dev": true,
   "observability": { "enabled": true },
+  "vars": {
+    // The KVM8 parse endpoint (path-routed under the api cert). Key is a wrangler secret.
+    "REGISTRY_PARSE_URL": "https://api.spiderbrain.ai/registry-parse"
+  },
   "r2_buckets": [
     { "binding": "BRAINS", "bucket_name": "spiderbrain-brains" }
   ]
