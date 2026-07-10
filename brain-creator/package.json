@@ -1,0 +1,10 @@
+{
+  "name": "spiderbrain-brain-creator",
+  "private": true,
+  "description": "R2 data plane for /brains + the compat-scan proxy to KVM8",
+  "type": "module",
+  "scripts": {
+    "check:account": "node scripts/check-account.mjs",
+    "deploy": "node scripts/check-account.mjs && wrangler deploy"
+  }
+}
