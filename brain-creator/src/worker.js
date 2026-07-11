@@ -33,10 +33,13 @@ function stripToFree(result) {
 // Bump to invalidate the ENTIRE scan cache on an engine upgrade (the key includes it,
 // so old-engine builds are simply never read again). Keep in sync with sbpw.
 const ENGINE_VER = 'v5';
-// Normalize to a 12-char sha prefix: gate1 reads GitHub's full 40-char sha, but KVM8's
-// result.sha is already short — slicing both to 12 makes the write key (from the result)
-// and the read key (from GitHub) line up on the same commit.
-const cacheKey = (owner, repo, sha) => `scan/${owner}/${repo}/${ENGINE_VER}/${String(sha || '').slice(0, 12)}.json`;
+// Cache version segment = the repo's `pushed_at` (digits only), which the SINGLE gate1
+// /repos call already returns — so no extra GitHub call, and it changes whenever the repo
+// is pushed to. It over-invalidates slightly (a push to any branch bumps it, triggering a
+// re-parse of the default branch we didn't need) but NEVER serves stale data. Beats a HEAD-
+// sha key that needs a 2nd GitHub call per scan (unauth GitHub is 60/hr, shared).
+const verOf = (pushedAt) => String(pushedAt || '').replace(/\D/g, '') || 'x';
+const cacheKey = (owner, repo, ver) => `scan/${owner}/${repo}/${ENGINE_VER}/${ver}.json`;
 
 function ghHeaders(env) {
   const h = { 'user-agent': 'spiderbrain-compat', accept: 'application/vnd.github+json' };
@@ -53,14 +56,7 @@ async function gate1(owner, repo, env) {
   const meta = await r.json();
   if (meta.private) return { ok: false, code: 403, error: 'private repos are coming soon' };
   if (meta.language && !JS_TS.has(meta.language)) return { ok: false, code: 422, error: `${meta.language} is not supported yet (JS/TS only). Vote for it on the demand board.`, language: meta.language };
-  // Resolve HEAD sha of the default branch so the cache can key on the exact commit.
-  // Best-effort: a null sha just means we skip the cache and always parse.
-  let sha = null;
-  try {
-    const cr = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits/${meta.default_branch}`, { headers: ghHeaders(env) });
-    if (cr.ok) sha = String((await cr.json()).sha || '').slice(0, 40) || null;
-  } catch { /* sha stays null */ }
-  return { ok: true, sha };
+  return { ok: true, ver: verOf(meta.pushed_at) };
 }
 
 async function kvm8(path, env, init) {
@@ -97,18 +93,23 @@ export default {
       const owner = String(b.owner || '').trim(), repo = String(b.repo || '').trim();
       const g = await gate1(owner, repo, env);
       if (!g.ok) return json({ error: g.error, ...(g.language ? { language: g.language } : {}) }, g.code);
-      // Cache hit on the exact commit -> return the stripped result inline, no KVM8 parse.
-      if (env.SCAN_CACHE && g.sha) {
+      // Cache hit on this pushed_at -> return the stripped result inline, no KVM8 parse.
+      if (env.SCAN_CACHE && g.ver) {
         try {
-          const hit = await env.SCAN_CACHE.get(cacheKey(owner, repo, g.sha));
-          if (hit) return json({ status: 'done', cached: true, sha: g.sha, result: stripToFree(JSON.parse(await hit.text())) });
+          const hit = await env.SCAN_CACHE.get(cacheKey(owner, repo, g.ver));
+          if (hit) return json({ status: 'done', cached: true, ver: g.ver, result: stripToFree(JSON.parse(await hit.text())) });
         } catch { /* cache miss/parse error -> fall through to a fresh parse */ }
       }
       // Miss: KVM8 dedups concurrent parses of the same repo (byRepo), so no lock needed here.
       let r; try { r = await kvm8('/parse', env, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ owner, repo }) }); } catch { return json({ error: 'parser unreachable' }, 502); }
       if (!r.ok) return json({ error: 'parser rejected (' + r.status + ')' }, 502);
       const { jobId } = await r.json();
-      return json({ jobId, sha: g.sha });
+      // Thread owner/repo/ver to /scan/:id (which has only the jobId) so it can write the
+      // cache under the right key on completion. Best-effort KV (reuses RATE_LIMIT).
+      if (env.RATE_LIMIT && jobId) {
+        try { await env.RATE_LIMIT.put(`jm:${jobId}`, JSON.stringify({ owner, repo, ver: g.ver }), { expirationTtl: 3600 }); } catch {}
+      }
+      return json({ jobId, ver: g.ver });
     }
 
     if (path.startsWith('/scan/') && request.method === 'GET') {
@@ -119,11 +120,16 @@ export default {
       if (r.status === 404) return json({ error: 'no such job' }, 404);
       const j = await r.json();
       if (j.status === 'done') {
-        // Persist the FULL result to the shared cache (keyed by the built sha) so the next
-        // scan of this commit — free or paid — is an instant hit. Best-effort; idempotent.
+        // Persist the FULL result to the shared cache under the pushed_at ver threaded from
+        // /scan/start (via KV, keyed by jobId), so the next scan of this repo — free or paid —
+        // is an instant hit. Best-effort; idempotent.
         const res = j.result || {};
-        if (env.SCAN_CACHE && res.owner && res.repo && res.sha) {
-          try { await env.SCAN_CACHE.put(cacheKey(res.owner, res.repo, res.sha), JSON.stringify(res), { httpMetadata: { contentType: 'application/json' } }); } catch { /* cache write is best-effort */ }
+        if (env.SCAN_CACHE && env.RATE_LIMIT && res.owner && res.repo) {
+          try {
+            const meta = await env.RATE_LIMIT.get(`jm:${jobId}`);
+            const ver = meta ? JSON.parse(meta).ver : null;
+            if (ver) await env.SCAN_CACHE.put(cacheKey(res.owner, res.repo, ver), JSON.stringify(res), { httpMetadata: { contentType: 'application/json' } });
+          } catch { /* cache write is best-effort */ }
         }
         // This PUBLIC proxy ALWAYS strips to the free tier. The paid full report (with
         // DeepWeave scores) is fetched server-side by sbpw straight from the cache/KVM8
