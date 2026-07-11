@@ -17,7 +17,10 @@
     "REGISTRY_PARSE_URL": "https://api.spiderbrain.ai/registry-parse"
   },
   "r2_buckets": [
-    { "binding": "BRAINS", "bucket_name": "spiderbrain-brains" }
+    { "binding": "BRAINS", "bucket_name": "spiderbrain-brains" },
+    // Scan cache: full KVM8 scored result keyed by owner/repo/engineVer/sha. Shared with
+    // sbpw so the free scan + the paid $9 report reuse one build; unchanged repo = instant hit.
+    { "binding": "SCAN_CACHE", "bucket_name": "spiderbrain-scan-cache" }
   ],
   // Shared rate-limit KV (same namespace as sbpw, same account) — throttles the
   // unauthenticated /scan/start so it can't be used to flood KVM8 or burn the GitHub quota.
