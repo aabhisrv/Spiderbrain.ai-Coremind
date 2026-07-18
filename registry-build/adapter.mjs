@@ -26,10 +26,19 @@ const SEV = (blast, max) => (blast >= max * 0.5 ? 'high' : blast >= max * 0.2 ? 
 
 const byBlast = (a, b) => (b.blastRadius || 0) - (a.blastRadius || 0) || (a.id < b.id ? -1 : 1);
 
+// Every language kind that counts as "code" for the display/graph layer. Declared here (above
+// its first use in graphSubset) because ESM const is not hoisted. displayRecord references the
+// same set. Kept in sync with the engine's MASTER_KINDS language members; gocode is pre-listed
+// so Go lights up the moment its classifier lands.
+const CODE_KINDS = new Set(['code', 'pycode', 'rustcode', 'gocode']);
+const LANG_OF = { code: 'TypeScript', pycode: 'Python', rustcode: 'Rust', gocode: 'Go' };
+
 /** A renderable subgraph: the top-N code nodes by blast radius plus the dependency
  *  edges among them. Deterministic (sorted). Small enough to lay out + draw client-side. */
 export function graphSubset(nodes, limit = 80) {
-  const code = nodes.filter((n) => n.kind === 'code');
+  // Language-aware (2026-07-19): was `kind === 'code'` only, so a Python/Rust repo produced an
+  // EMPTY graph.json (0 nodes/edges) — the registry graph viz was blank for every non-JS repo.
+  const code = nodes.filter((n) => CODE_KINDS.has(n.kind));
   const top = code.slice().sort(byBlast).slice(0, limit);
   const idx = new Map(top.map((n, i) => [n.id, i]));
   const clusters = [...new Set(top.map((n) => n.cluster || ''))].sort();
@@ -56,13 +65,10 @@ export function graphSubset(nodes, limit = 80) {
 const one = (x) => (Number.isFinite(x) ? Math.round(x * 10) / 10 : null);
 const pct = (x) => (Number.isFinite(x) ? Math.round(x * 100) : null);
 
-// Language-kind awareness (2026-07-19). The display layer predated the language bridge and
-// counted only kind==='code', so a pure-Python repo rendered a public card with codeFiles:0,
-// lang:"TypeScript" and EMPTY hotspots/startHere/topFiles — underselling exactly the repos the
-// engine now parses first-class (found live on benjaminp/six after the R2 deploy). Display-only:
-// the graph fingerprint never touches these fields.
-const CODE_KINDS = new Set(['code', 'pycode', 'rustcode', 'gocode']);
-const LANG_OF = { code: 'TypeScript', pycode: 'Python', rustcode: 'Rust', gocode: 'Go' };
+// CODE_KINDS / LANG_OF are declared above graphSubset (ESM const is not hoisted). Both the graph
+// subset and this display record use them, so a pure-Python repo no longer renders codeFiles:0,
+// lang:"TypeScript", an empty graph, or empty hotspots/startHere/topFiles. Display-only: the graph
+// fingerprint never touches these fields.
 
 /** Build the display record the registry pages render, from the SAME public structure.
  *  meta = { owner, repo, tier, lang, featured }; counts/fp/sha from manifest; builtAt from provenance/brain.
