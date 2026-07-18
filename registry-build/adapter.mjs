@@ -56,16 +56,24 @@ export function graphSubset(nodes, limit = 80) {
 const one = (x) => (Number.isFinite(x) ? Math.round(x * 10) / 10 : null);
 const pct = (x) => (Number.isFinite(x) ? Math.round(x * 100) : null);
 
+// Language-kind awareness (2026-07-19). The display layer predated the language bridge and
+// counted only kind==='code', so a pure-Python repo rendered a public card with codeFiles:0,
+// lang:"TypeScript" and EMPTY hotspots/startHere/topFiles — underselling exactly the repos the
+// engine now parses first-class (found live on benjaminp/six after the R2 deploy). Display-only:
+// the graph fingerprint never touches these fields.
+const CODE_KINDS = new Set(['code', 'pycode', 'rustcode', 'gocode']);
+const LANG_OF = { code: 'TypeScript', pycode: 'Python', rustcode: 'Rust', gocode: 'Go' };
+
 /** Build the display record the registry pages render, from the SAME public structure.
  *  meta = { owner, repo, tier, lang, featured }; counts/fp/sha from manifest; builtAt from provenance/brain.
  *  rawNodes (optional) = the FULL scored synganglion nodes (id -> node). We render those richer scores on
  *  OUR platform (the repo is public; the moat is the engine, not the numbers) — they never enter the
  *  source-free structure.ndjson that the agent plane / npx serve. This is the public-vs-full-brain funnel. */
 export function displayRecord({ meta, nodes, manifest, builtAt, rawNodes }) {
-  // Only CODE nodes are meaningful hotspots/keystones — config/docs clusters (kind
+  // Only CODE-language nodes are meaningful hotspots/keystones — config/docs clusters (kind
   // 'content'/'config') have per-cluster masters like .changeset/config.json that are
-  // noise for "what breaks" and "where to start".
-  const code = nodes.filter((n) => n.kind === 'code');
+  // noise for "what breaks" and "where to start". "Code" spans every language kind.
+  const code = nodes.filter((n) => CODE_KINDS.has(n.kind));
   const maxBlast = code.reduce((m, n) => Math.max(m, n.blastRadius || 0), 0);
   const hotspots = code
     .filter((n) => (n.blastRadius || 0) > 0)
@@ -87,7 +95,7 @@ export function displayRecord({ meta, nodes, manifest, builtAt, rawNodes }) {
     if (!c) continue;
     const e = cm.get(c) || { name: c, files: 0, code: 0, reach: 0 };
     e.files++;
-    if (n.kind === 'code') e.code++;
+    if (CODE_KINDS.has(n.kind)) e.code++;
     e.reach = Math.max(e.reach, n.blastRadius || 0);
     cm.set(c, e);
   }
@@ -122,10 +130,16 @@ export function displayRecord({ meta, nodes, manifest, builtAt, rawNodes }) {
       return rec;
     });
   const scored = rawNodes ? topFiles.some((t) => t.webscore != null) : undefined;
+  // Dominant language from the graph itself when the caller didn't pin one. Deterministic
+  // tiebreak (count desc, then kind name code-unit asc) — no locale, matching the engine rule.
+  const langCounts = new Map();
+  for (const n of code) langCounts.set(n.kind, (langCounts.get(n.kind) || 0) + 1);
+  const domKind = [...langCounts.entries()]
+    .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))[0]?.[0];
   return {
     owner: meta.owner,
     repo: meta.repo,
-    lang: meta.lang || 'TypeScript',
+    lang: meta.lang || LANG_OF[domKind] || 'TypeScript',
     tier: meta.tier || 'unofficial',
     featured: !!meta.featured,
     nodes: manifest.counts.files,
