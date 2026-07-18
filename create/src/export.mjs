@@ -18,6 +18,17 @@ function canon(v) {
   return JSON.stringify(v)
 }
 const num = (x) => (Number.isFinite(x) ? x : 0)
+// Every string a record carries (top-level strings + strings inside arrays), for the value-level
+// leak scan below. The structure projection only holds strings, booleans, numbers, and a string[]
+// (dependsOn), so this covers it without recursing arbitrarily.
+function recordStrings(rec) {
+  const out = []
+  for (const v of Object.values(rec)) {
+    if (typeof v === 'string') out.push(v)
+    else if (Array.isArray(v)) for (const x of v) if (typeof x === 'string') out.push(x)
+  }
+  return out
+}
 
 /** Build the understanding set from a scored brain ({ nodes: id->node, edges, stats }).
  *  opts: { private?: boolean, repo?: string, commit?: string }
@@ -126,17 +137,43 @@ export function buildUnderstanding(brain, opts = {}) {
     attribution: null,
   }
 
-  // Leak guard (public variant): abort if any private-tuning token appears.
-  // Anchored as JSON keys so a legitimate file PATH (e.g. ".../webscore.mjs")
-  // never false-positives; only a leaked score FIELD trips it.
-  if (!isPrivate) {
-    const FORBIDDEN = ['"webscore":', '"spikescore":', '"vibrationscore":', '"semantic01":', '"constitutive01":', '"drift":', '"clusterspikescore":', '"topologyspikescore":', '"blindspotIndex":', '"shortcutAudit"', '"refMass"', '"alpha":', '"modularity"']
-    const haystack = structureNdjson + '\n' + agentsBlock + '\n' + JSON.stringify(manifest)
-    const hit = FORBIDDEN.find((t) => haystack.includes(t))
-    if (hit) throw new Error(`LEAK GUARD: forbidden token ${hit} would appear in public output. Aborting (this should never happen; please report it).`)
-    const ALLOWED_KEYS = new Set(['id', 'kind', 'role', 'layer', 'cluster', 'isMaster', 'master', 'contentHash', 'blastRadius', 'dependsOn'])
-    const bad = Object.keys(JSON.parse(structureLines[0] || '{}')).find((k) => !ALLOWED_KEYS.has(k))
-    if (bad) throw new Error(`LEAK GUARD: unexpected key "${bad}" in public structure record. Aborting.`)
+  // Leak guard. structure.ndjson / AGENTS.block / manifest.json are the source-free AND score-free
+  // projection in BOTH variants — the weighted scores live ONLY in the separate private scores.ndjson.
+  // So these three files must never carry a score field-name or an out-of-allowlist key regardless of
+  // `private`. Before 2026-07-19 (BaaS hardening) this whole block ran only for the PUBLIC variant, so
+  // a private brain's structure.ndjson — exactly the artifact a cloud/BaaS parse returns — was never
+  // checked at all. FORBIDDEN is anchored as JSON keys so a legit file PATH (".../webscore.mjs") never
+  // false-positives; only a leaked score FIELD trips it. scoresNdjson is deliberately NOT in the
+  // haystack, so the legitimate private scores don't self-trip.
+  const FORBIDDEN = ['"webscore":', '"spikescore":', '"vibrationscore":', '"semantic01":', '"constitutive01":', '"drift":', '"clusterspikescore":', '"topologyspikescore":', '"blindspotIndex":', '"shortcutAudit"', '"refMass"', '"alpha":', '"modularity"']
+  const haystack = structureNdjson + '\n' + agentsBlock + '\n' + JSON.stringify(manifest)
+  const hit = FORBIDDEN.find((t) => haystack.includes(t))
+  if (hit) throw new Error(`LEAK GUARD: forbidden token ${hit} would appear in structure/agents/manifest. Aborting (this should never happen; please report it).`)
+
+  // Structural key allowlist + value sanity, on EVERY record. The projection above builds homogeneous
+  // lines today (so line 0 was representative), but checking all lines future-proofs against a later
+  // conditional projection, and the value scan catches embedded source content — a value carrying a
+  // newline, or longer than any real path/hash — that a key-only check would wave through.
+  const ALLOWED_KEYS = new Set(['id', 'kind', 'role', 'layer', 'cluster', 'isMaster', 'master', 'contentHash', 'blastRadius', 'dependsOn'])
+  const MAX_VAL = 4096 // deepest legit path is well under this; a source file is well over it
+  for (let i = 0; i < structureLines.length; i++) {
+    const rec = JSON.parse(structureLines[i])
+    const badKey = Object.keys(rec).find((k) => !ALLOWED_KEYS.has(k))
+    if (badKey) throw new Error(`LEAK GUARD: unexpected key "${badKey}" in structure record ${i}. Aborting.`)
+    const badVal = recordStrings(rec).find((v) => v.includes('\n') || v.length > MAX_VAL)
+    if (badVal !== undefined) throw new Error(`LEAK GUARD: structure record ${i} carries a multiline/oversized value (possible embedded source). Aborting.`)
+  }
+
+  // Private variant: scores.ndjson must carry ONLY id + the weighted-score allowlist. Built by
+  // allowlist projection above, so this is defense-in-depth against a future edit that widens it —
+  // the private path had no such assertion before.
+  if (scoresNdjson) {
+    const OK_SCORE_KEYS = new Set(['id', ...WEIGHTED])
+    const scoreLines = scoresNdjson.trim().split('\n')
+    for (let i = 0; i < scoreLines.length; i++) {
+      const bad = Object.keys(JSON.parse(scoreLines[i])).find((k) => !OK_SCORE_KEYS.has(k))
+      if (bad) throw new Error(`LEAK GUARD: unexpected key "${bad}" in scores record ${i}. Aborting.`)
+    }
   }
 
   const out = { 'structure.ndjson': structureNdjson, 'AGENTS.block.md': agentsBlock, 'manifest.json': JSON.stringify(manifest, null, 2) + '\n' }
