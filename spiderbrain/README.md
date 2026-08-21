@@ -21,13 +21,18 @@ Writes a source-free `.spiderbrain/` folder and an `AGENTS.md` block. Commit bot
 When a repo has a `.spiderbrain/` folder, any agent or developer can use it offline:
 
 ```
-npx spiderbrain mcp                 # an MCP server for Claude Code / Cursor
+npx spiderbrain mcp --root .        # an MCP server for Claude Code / Cursor
 npx spiderbrain blast src/db.ts     # what a change here reaches
 npx spiderbrain impact              # what your current git diff reaches
 npx spiderbrain keystones           # the load-bearing files
 npx spiderbrain path a.ts b.ts      # how one file reaches another
 npx spiderbrain verify --allow-stale   # folder untampered? (CI gate)
 ```
+
+> An MCP client's working directory is usually not your repository, so pass the repo
+> explicitly with `--root <path>`, `--root=<path>`, or the `SPIDERBRAIN_ROOT` environment
+> variable. Without it the server serves the working directory and reports that no
+> understanding layer was found, which is a wrong answer rather than an error.
 
 Every command takes `--json` (exit codes: 0 ok, 1 failed, 2 usage, 3 no understanding).
 No committed folder? The reader falls back to the public registry when the repo's

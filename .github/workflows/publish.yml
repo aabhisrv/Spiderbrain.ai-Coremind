@@ -1,6 +1,22 @@
 # Publish a package to npm with provenance (the npm page shows a verified link back
 # to this repo + the exact workflow run). Manual trigger; pick the package.
-# Requires the NPM_TOKEN repository secret (an npm Automation token).
+#
+# AUTH, two supported routes. Prefer the first.
+#
+# 1. Trusted publishing (OIDC, no secret at all). Configure it per package on npmjs.com
+#    under the package's Trusted Publisher section: this org/user, this repo, workflow
+#    filename publish.yml, allowed action `npm publish`. Provenance is then generated
+#    automatically. Needs npm >= 11.5.1 and node >= 22.14.0, which is why node-version is 24
+#    below and not 20.
+#
+# 2. A GRANULAR access token in the NPM_TOKEN secret, with "Bypass two-factor
+#    authentication" enabled, granting the `@spiderbrain` scope AND the `spiderbrain`
+#    package under "Packages and scopes". The "Organizations" section grants nothing
+#    publishable. NOTE: npm removed Automation and legacy tokens in November 2025, so any
+#    instruction to create an "Automation token" is obsolete.
+#
+# PUBLISH ORDER MATTERS: read, then create, then spiderbrain. The umbrella pins ^0.2.x of
+# both siblings, so publishing it first makes `latest` unresolvable.
 name: publish
 
 on:
@@ -23,7 +39,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           registry-url: https://registry.npmjs.org
       - run: node --test "test/conformance.test.mjs"
       - run: npm publish --provenance --access public

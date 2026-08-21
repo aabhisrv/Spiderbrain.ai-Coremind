@@ -1,6 +1,6 @@
 {
   "name": "@spiderbrain/create",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Give a repo a committed deterministic context layer: fetch your scored brain and write a source-free .spiderbrain/ folder + AGENTS.md block. For CI and the terminal.",
   "type": "module",
   "license": "MIT",

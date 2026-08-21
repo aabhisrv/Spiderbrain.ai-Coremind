@@ -3,21 +3,21 @@
   "variant": "public",
   "privacy": "plain-paths",
   "engineVersion": "v5",
-  "scoredFrom": "574b4662721da32c0b916c14bccf39401e189221",
+  "scoredFrom": "65e8021e1e43b1b3c69e772d8a3476563b08efe3",
   "repo": {
     "name": "aabhisrv/Spiderbrain.ai-Coremind",
-    "commit": "574b4662721da32c0b916c14bccf39401e189221"
+    "commit": "65e8021e1e43b1b3c69e772d8a3476563b08efe3"
   },
   "counts": {
     "files": 36,
-    "edges": 19,
+    "edges": 20,
     "clusters": 0,
     "masters": 0
   },
-  "graphFingerprint": "a11a31ca107b8b20",
+  "graphFingerprint": "94362fb089c2c6be",
   "fileHashes": {
-    "structure.ndjson": "a11a31ca107b8b2015216eaf547d2537c2a1615beebb27d89313bfc07ccdd726",
-    "AGENTS.block.md": "922c478fbee23d024eea261584e70c66fb6a0933daffff6fbc7f77f827dd5bed"
+    "structure.ndjson": "94362fb089c2c6bee67fa4aa39a41e095b3000b9fd65399c6ebc89659d090c76",
+    "AGENTS.block.md": "0cd8ef6baaaf9e62a94c9f6cf7c7f463b1fd270f5ec85d2d9d9fabda58cf437d"
   },
   "benchmark": {
     "standard": "context-trust-level",

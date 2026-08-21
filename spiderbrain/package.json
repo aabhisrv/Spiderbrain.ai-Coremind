@@ -1,6 +1,6 @@
 {
   "name": "spiderbrain",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "mcpName": "ai.spiderbrain/spiderbrain",
   "description": "A deterministic context layer for your repo, committed beside the code: blast radius, keystones, and an MCP server that gives agents answers with receipts. The one command; wraps @spiderbrain/read + @spiderbrain/create.",
   "type": "module",
@@ -10,8 +10,8 @@
     "spiderbrain": "bin/spiderbrain.mjs"
   },
   "dependencies": {
-    "@spiderbrain/read": "^0.2.2",
-    "@spiderbrain/create": "^0.2.2"
+    "@spiderbrain/read": "^0.2.3",
+    "@spiderbrain/create": "^0.2.3"
   },
   "engines": {
     "node": ">=18"

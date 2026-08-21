@@ -34,10 +34,16 @@ async function main() {
     process.exit((await runCreate(argv.slice(1))) || 0)
   }
   if (cmd === 'mcp') {
-    const { startMcp } = await import('@spiderbrain/read/mcp')
-    const i = argv.indexOf('--root')
-    startMcp(i >= 0 && argv[i + 1] ? argv[i + 1] : process.cwd())
+    const { startMcp, resolveRoot } = await import('@spiderbrain/read/mcp')
+    const { root, error } = resolveRoot(argv.slice(1))
+    if (error) { process.stderr.write(`spiderbrain: ${error}\n`); process.exit(2) }
+    startMcp(root)
     return // the MCP server keeps the process alive; do not exit
+  }
+  /* Same trap as the read bin: `mcp` later in argv silently ran the CLI instead. */
+  if (argv.includes('mcp')) {
+    process.stderr.write('spiderbrain: `mcp` must be the first argument, e.g. `spiderbrain mcp --root <path>`.\n')
+    process.exit(2)
   }
   const { runCli } = await import('@spiderbrain/read/cli')
   process.exit((await runCli(argv)) || 0)

@@ -214,3 +214,117 @@ test('cli: unknown file exits 1, unknown command exits 2, no folder exits 3', ()
   assert.equal(r.status, 3)
   assert.ok((r.stderr || '').includes('npx spiderbrain create'))
 })
+
+
+// ── MCP surface ───────────────────────────────────────────────────────────────
+// These exist because the CLI and `verify` told the truth about a tampered or stale brain
+// while the MCP server answered from it silently, and nothing in this suite touched MCP.
+
+const MCP_CLI = fileURLToPath(new URL('../read/bin/sb.mjs', import.meta.url))
+
+/** Drive the stdio MCP server through one tool call and return the text of the result. */
+function mcpCall(args, cwd, toolName = 'sb_keystones', toolArgs = {}) {
+  const reqs = [
+    { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'conformance', version: '1' } } },
+    { jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: toolName, arguments: toolArgs } },
+  ].map((r) => JSON.stringify(r)).join('\n') + '\n'
+  const r = spawnSync(process.execPath, [MCP_CLI, 'mcp', ...args], { cwd, input: reqs, encoding: 'utf8', timeout: 60000 })
+  const lines = (r.stdout || '').trim().split('\n').filter(Boolean)
+  const last = lines.length ? JSON.parse(lines[lines.length - 1]) : null
+  return { status: r.status, stderr: r.stderr || '', text: last?.result?.content?.[0]?.text ?? null }
+}
+
+test('mcp: --root accepts the space form, the equals form, and SPIDERBRAIN_ROOT', () => {
+  const { root } = freshFolder()
+  const elsewhere = mkdtempSync(join(tmpdir(), 'sb-cwd-'))
+
+  const space = mcpCall(['--root', root], elsewhere)
+  assert.match(space.text, /Load-bearing files/, 'space form: ' + space.stderr)
+
+  // --root=<path> used to be invisible (argv.indexOf('--root')), so the server silently
+  // served cwd and told the agent the repo had no understanding layer.
+  const equals = mcpCall([`--root=${root}`], elsewhere)
+  assert.match(equals.text, /Load-bearing files/, 'equals form: ' + equals.stderr)
+
+  const viaEnv = spawnSync(process.execPath, [MCP_CLI, 'mcp'], {
+    cwd: elsewhere,
+    env: { ...process.env, SPIDERBRAIN_ROOT: root },
+    input: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'c', version: '1' } } }) + '\n' +
+           JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'sb_keystones', arguments: {} } }) + '\n',
+    encoding: 'utf8',
+    timeout: 60000,
+  })
+  const envLines = (viaEnv.stdout || '').trim().split('\n').filter(Boolean)
+  const envText = JSON.parse(envLines[envLines.length - 1]).result.content[0].text
+  assert.match(envText, /Load-bearing files/, 'SPIDERBRAIN_ROOT: ' + viaEnv.stderr)
+})
+
+test('mcp: a bare --root and a misplaced mcp are errors, not silent fallbacks', () => {
+  const elsewhere = mkdtempSync(join(tmpdir(), 'sb-cwd-'))
+  // Guessing after an explicit but incomplete instruction is what hid the original bug.
+  const bare = spawnSync(process.execPath, [MCP_CLI, 'mcp', '--root'], { cwd: elsewhere, input: '', encoding: 'utf8', timeout: 30000 })
+  assert.equal(bare.status, 2)
+  assert.match(bare.stderr, /--root was given with no path/)
+
+  // `mcp` anywhere but first fell through to the CLI, which printed help and exited 0 while
+  // the client waited for a handshake that never came.
+  const misplaced = spawnSync(process.execPath, [MCP_CLI, '--root', elsewhere, 'mcp'], { cwd: elsewhere, input: '', encoding: 'utf8', timeout: 30000 })
+  assert.equal(misplaced.status, 2)
+  assert.match(misplaced.stderr, /must be the first argument/)
+})
+
+test('mcp: a tampered brain is flagged in the tool result, not answered silently', () => {
+  const { root } = freshFolder()
+  const sPath = join(root, '.spiderbrain', 'structure.ndjson')
+  writeFileSync(sPath, readFileSync(sPath, 'utf8') + '{"id":"FAKE/injected.mjs","kind":"code"}\n')
+
+  const r = mcpCall(['--root', root], root)
+  assert.match(r.text, /Load-bearing files/, 'should still answer')
+  assert.match(r.text, /FAILS its own integrity check/, 'MUST warn the agent the brain is untrustworthy')
+})
+
+test('mcp: a stale brain is flagged in the tool result', () => {
+  const { root } = freshFolder()
+  // The fixture records COMMIT; claim a different HEAD so verify sees staleness.
+  const mPath = join(root, '.spiderbrain', 'manifest.json')
+  const m = JSON.parse(readFileSync(mPath, 'utf8'))
+  const scoredAt = m.repo?.commit || m.scoredFrom
+  assert.ok(scoredAt, 'fixture must record the commit it was scored at')
+
+  // A git dir the brain has moved on from: HEAD is a different sha.
+  const gitDir = join(root, '.git')
+  mkdirSync(gitDir, { recursive: true })
+  writeFileSync(join(gitDir, 'HEAD'), 'a'.repeat(40) + '\n')
+
+  const r = mcpCall(['--root', root], root)
+  assert.match(r.text, /is STALE/, 'MUST warn that the brain describes older code')
+})
+
+test('mcp: a corrupt folder is reported as corrupt, never as missing', () => {
+  const { root } = freshFolder()
+  writeFileSync(join(root, '.spiderbrain', 'structure.ndjson'), 'this is not ndjson {{{\n')
+  const corrupt = mcpCall(['--root', root], root)
+  assert.match(corrupt.text, /corrupt, not missing/, 'a corrupt folder told the agent the repo was un-analysed')
+  assert.doesNotMatch(corrupt.text, /\.spiderbrain\/ is missing/)
+
+  // And a genuinely absent folder still says missing.
+  const empty = mkdtempSync(join(tmpdir(), 'sb-empty-'))
+  const absent = mcpCall(['--root', empty], empty)
+  assert.match(absent.text, /is missing/)
+})
+
+test('bin shebangs ship LF: a CR breaks execve on every POSIX host', () => {
+  // All three 0.2.1 tarballs shipped `#!/usr/bin/env node\r\n` because they were packed on
+  // Windows. npm repairs it on install; pnpm, yarn, bun and Docker COPY do not.
+  const bins = [
+    '../spiderbrain/bin/spiderbrain.mjs',
+    '../read/bin/sb.mjs',
+    '../create/bin/create.mjs',
+  ]
+  for (const rel of bins) {
+    const p = fileURLToPath(new URL(rel, import.meta.url))
+    const firstLine = readFileSync(p, 'utf8').split('\n')[0]
+    assert.ok(firstLine.startsWith('#!'), `${rel} must start with a shebang`)
+    assert.ok(!firstLine.endsWith('\r'), `${rel} shebang ends with CR; execve would look for an interpreter named "node\\r"`)
+  }
+})

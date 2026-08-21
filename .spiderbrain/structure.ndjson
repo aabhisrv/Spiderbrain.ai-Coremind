@@ -25,7 +25,7 @@
 {"blastRadius":3,"cluster":"read","contentHash":"","dependsOn":[],"id":"read/src/cloud.mjs","isMaster":false,"kind":"code","layer":"","master":"","role":""}
 {"blastRadius":5,"cluster":"read","contentHash":"","dependsOn":[],"id":"read/src/core.mjs","isMaster":false,"kind":"code","layer":"","master":"","role":""}
 {"blastRadius":4,"cluster":"read","contentHash":"","dependsOn":[],"id":"read/src/git.mjs","isMaster":false,"kind":"code","layer":"","master":"","role":""}
-{"blastRadius":1,"cluster":"read","contentHash":"","dependsOn":["read/src/cloud.mjs","read/src/core.mjs","read/src/registry.mjs"],"id":"read/src/mcp.mjs","isMaster":false,"kind":"code","layer":"","master":"","role":""}
+{"blastRadius":1,"cluster":"read","contentHash":"","dependsOn":["read/src/cloud.mjs","read/src/core.mjs","read/src/git.mjs","read/src/registry.mjs"],"id":"read/src/mcp.mjs","isMaster":false,"kind":"code","layer":"","master":"","role":""}
 {"blastRadius":3,"cluster":"read","contentHash":"","dependsOn":["read/src/core.mjs","read/src/git.mjs"],"id":"read/src/registry.mjs","isMaster":false,"kind":"code","layer":"","master":"","role":""}
 {"blastRadius":0,"cluster":"scripts","contentHash":"","dependsOn":["create/src/export.mjs","create/src/gitinfo.mjs"],"id":"scripts/build-own-brain.mjs","isMaster":false,"kind":"code","layer":"","master":"","role":""}
 {"blastRadius":0,"cluster":"spiderbrain","contentHash":"","dependsOn":[],"id":"spiderbrain/LICENSE","isMaster":false,"kind":"","layer":"","master":"","role":""}

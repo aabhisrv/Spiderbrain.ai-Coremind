@@ -1,6 +1,6 @@
 {
   "name": "@spiderbrain/read",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Read a repo's committed deterministic context layer (.spiderbrain/): blast radius, keystones, and structure, offline. MCP server for AI coding agents, giving answers with receipts. Cloud why-layer with a key.",
   "type": "module",
   "license": "MIT",

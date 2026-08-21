@@ -19,8 +19,13 @@ reader, and the format specification.
 When a repo carries a `.spiderbrain/` folder, point the reader at it:
 
 ```
-npx spiderbrain mcp
+npx spiderbrain mcp --root .
 ```
+
+> An MCP client's working directory is usually not your repository, so pass the repo
+> explicitly with `--root <path>`, `--root=<path>`, or the `SPIDERBRAIN_ROOT` environment
+> variable. Without it the server serves the working directory and reports that no
+> understanding layer was found, which is a wrong answer rather than an error.
 
 That starts an MCP server your coding agent (Claude Code, Cursor, or any MCP client)
 can query. Tools: `sb_blast`, `sb_impact`, `sb_path`, `sb_keystones`, `sb_map`,
