@@ -1,0 +1,16 @@
+# Bin entry points must ship LF, always.
+#
+# The shebang line is consumed by the POSIX kernel, not by Node, so a trailing CR makes
+# execve look for an interpreter literally named `node\r`. All three 0.2.1 tarballs shipped
+# `#!/usr/bin/env node\r\n` because they were packed on Windows. npm happens to repair this
+# on install (bundled bin-links/lib/fix-bin.js rewrites a Windows hashbang), which is why
+# nobody noticed, but that repair is npm-specific and conditional: pnpm, yarn and bun do
+# their own linking, and anything executing the file straight out of an extracted tarball
+# (Docker COPY, a vendored install, a restored CI cache) gets
+# `env: 'node\r': No such file or directory`.
+#
+# Deliberately narrow. `* text=auto` would reach .spiderbrain/, whose own .gitattributes
+# pins `* -text` because the understanding set must stay byte-exact and the conformance
+# suite asserts that. A nested .gitattributes wins for its own directory, but there is no
+# reason to aim a broad rule at it in the first place.
+**/bin/*.mjs text eol=lf
