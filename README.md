@@ -1,6 +1,6 @@
 # SpiderBrain: the understanding layer for your repo
 
-[![conformance](https://github.com/aabhisrv/spiderbrain.ai/actions/workflows/ci.yml/badge.svg)](https://github.com/aabhisrv/spiderbrain.ai/actions/workflows/ci.yml)
+[![conformance](https://github.com/aabhisrv/Spiderbrain.ai-Coremind/actions/workflows/ci.yml/badge.svg)](https://github.com/aabhisrv/Spiderbrain.ai-Coremind/actions/workflows/ci.yml)
 
 A repo tells an AI agent *what* the code is. It never tells it what **matters**, what a
 change **reaches**, or **why** anything was built the way it was. So every agent
@@ -35,8 +35,15 @@ npx spiderbrain impact                        # what YOUR CURRENT DIFF reaches
 npx spiderbrain keystones                     # the load-bearing files
 npx spiderbrain map src/auth/session.ts       # what a file is + touches
 npx spiderbrain path src/a.ts src/b.ts        # how one file reaches another
-npx spiderbrain verify                        # folder untampered + current?
+npx spiderbrain verify --allow-stale          # folder untampered? see note below
 ```
+
+> **Why `--allow-stale` on a committed brain.** `verify` checks two things: that
+> `structure.ndjson` still matches its recorded fingerprint, and that the brain was scored at
+> the current `HEAD`. Committing the folder is itself a commit, so a brain committed to a repo
+> is always at least one commit behind and the second check can never pass on a fresh clone.
+> `--allow-stale` keeps the integrity check strict and tolerates only that. Drop the flag when
+> you build the brain in CI at the commit you are testing, where currency is real.
 
 ## Agents are first-class
 
@@ -46,7 +53,7 @@ CI can gate on them:
 
 ```
 npx spiderbrain impact --fail-over 200   # fail a PR whose blast exceeds 200 files
-npx spiderbrain verify                   # fail a build whose folder is stale or edited
+npx spiderbrain verify                   # fail a build whose folder is stale or edited (drop --allow-stale to require currency)
 ```
 
 Ready-made workflows - a PR blast-radius comment and a freshness gate - are in
@@ -67,7 +74,7 @@ deterministically, verified in CI). Clone it and ask it about itself:
 
 ```
 npx spiderbrain keystones      # read/src/core.mjs is the load-bearing file
-npx spiderbrain verify         # the committed fingerprint matches the bytes
+npx spiderbrain verify --allow-stale   # the committed fingerprint matches the bytes
 ```
 
 ## Give your own repo understanding

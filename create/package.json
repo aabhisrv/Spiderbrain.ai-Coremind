@@ -1,7 +1,7 @@
 {
   "name": "@spiderbrain/create",
-  "version": "0.2.1",
-  "description": "Give a repo its committed SpiderBrain understanding layer: fetch your scored brain and write a source-free .spiderbrain/ folder + AGENTS.md block. For CI and the terminal.",
+  "version": "0.2.2",
+  "description": "Give a repo a committed deterministic context layer: fetch your scored brain and write a source-free .spiderbrain/ folder + AGENTS.md block. For CI and the terminal.",
   "type": "module",
   "license": "MIT",
   "author": "Perform Digital Pvt Ltd",
@@ -32,11 +32,11 @@
   "homepage": "https://spiderbrain.ai",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aabhisrv/spiderbrain.ai.git",
+    "url": "git+https://github.com/aabhisrv/Spiderbrain.ai-Coremind.git",
     "directory": "create"
   },
   "bugs": {
-    "url": "https://github.com/aabhisrv/spiderbrain.ai/issues"
+    "url": "https://github.com/aabhisrv/Spiderbrain.ai-Coremind/issues"
   },
   "publishConfig": {
     "access": "public"

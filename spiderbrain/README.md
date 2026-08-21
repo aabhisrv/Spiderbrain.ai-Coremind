@@ -5,7 +5,7 @@ tells an AI agent *what* the code is; it never tells it what **matters**, what a
 **reaches**, or **why** anything was built the way it was. `spiderbrain` fixes that.
 
 - Website: https://spiderbrain.ai
-- Format spec + source: https://github.com/aabhisrv/spiderbrain.ai
+- Format spec + source: https://github.com/aabhisrv/Spiderbrain.ai-Coremind
 
 ## Give a repo understanding
 
@@ -26,7 +26,7 @@ npx spiderbrain blast src/db.ts     # what a change here reaches
 npx spiderbrain impact              # what your current git diff reaches
 npx spiderbrain keystones           # the load-bearing files
 npx spiderbrain path a.ts b.ts      # how one file reaches another
-npx spiderbrain verify              # folder untampered + current? (CI gate)
+npx spiderbrain verify --allow-stale   # folder untampered? (CI gate)
 ```
 
 Every command takes `--json` (exit codes: 0 ok, 1 failed, 2 usage, 3 no understanding).

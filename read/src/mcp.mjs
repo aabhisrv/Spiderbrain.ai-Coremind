@@ -2,6 +2,12 @@
  * `npx @spiderbrain/read mcp` starts instantly. Turns a repo's committed
  * .spiderbrain/ folder into a queryable tool for Claude Code / Cursor. */
 import { loadBrain, blast, keystones, describe, impact, pathBetween } from './core.mjs'
+/* Read the version from the manifest rather than restating it. The published 0.2.1
+ * tarball reported 0.2.0 here, so every MCP client that ever connected was shown a
+ * version its own package.json contradicted. createRequire resolves ../package.json
+ * from the published layout (package/src/mcp.mjs beside package/package.json). */
+import { createRequire } from 'node:module'
+const PKG_VERSION = createRequire(import.meta.url)('../package.json').version
 import { fetchRegistryBrainFor, REGISTRY_NOTICE } from './registry.mjs'
 import { hasKey, cloudAsk, UPSELL } from './cloud.mjs'
 
@@ -76,7 +82,7 @@ export function startMcp(rootDir) {
   function send(msg) { process.stdout.write(JSON.stringify(msg) + '\n') }
   async function handle(req) {
     const { id, method, params } = req
-    if (method === 'initialize') return send({ jsonrpc: '2.0', id, result: { protocolVersion: params?.protocolVersion || '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'spiderbrain-read', version: '0.2.0' } } })
+    if (method === 'initialize') return send({ jsonrpc: '2.0', id, result: { protocolVersion: params?.protocolVersion || '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'spiderbrain-read', version: PKG_VERSION } } })
     if (method === 'tools/list') return send({ jsonrpc: '2.0', id, result: { tools: TOOLS } })
     if (method === 'tools/call') { const r = await callTool(params?.name, params?.arguments || {}); return send({ jsonrpc: '2.0', id, result: r }) }
     if (method === 'ping') return send({ jsonrpc: '2.0', id, result: {} })

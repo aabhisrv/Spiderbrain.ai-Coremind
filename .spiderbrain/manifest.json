@@ -3,21 +3,21 @@
   "variant": "public",
   "privacy": "plain-paths",
   "engineVersion": "v5",
-  "scoredFrom": "4738ebe62052d0ae65fc9132ad570d91ccb32c22",
+  "scoredFrom": "574b4662721da32c0b916c14bccf39401e189221",
   "repo": {
-    "name": "aabhisrv/spiderbrain.ai",
-    "commit": "4738ebe62052d0ae65fc9132ad570d91ccb32c22"
+    "name": "aabhisrv/Spiderbrain.ai-Coremind",
+    "commit": "574b4662721da32c0b916c14bccf39401e189221"
   },
   "counts": {
-    "files": 35,
+    "files": 36,
     "edges": 19,
     "clusters": 0,
     "masters": 0
   },
-  "graphFingerprint": "690da56ebc9813a3",
+  "graphFingerprint": "a11a31ca107b8b20",
   "fileHashes": {
-    "structure.ndjson": "690da56ebc9813a352dbd9a14c756ad7e5f9e9bfa797263539efa61507bda562",
-    "AGENTS.block.md": "f4898af12c8d3511f679698ea9e3fbe67a08302eb0811b0070b582826319b1ac"
+    "structure.ndjson": "a11a31ca107b8b2015216eaf547d2537c2a1615beebb27d89313bfc07ccdd726",
+    "AGENTS.block.md": "922c478fbee23d024eea261584e70c66fb6a0933daffff6fbc7f77f827dd5bed"
   },
   "benchmark": {
     "standard": "context-trust-level",

@@ -31,7 +31,7 @@ spiderbrain-create [--brain <name|id>] [--root .] [--private] [--agents AGENTS.m
 ## What it writes
 
 A source-free understanding set, documented in the
-[format spec](https://github.com/aabhisrv/spiderbrain.ai/blob/main/SPEC.md): `manifest.json`,
+[format spec](https://github.com/aabhisrv/Spiderbrain.ai-Coremind/blob/main/SPEC.md): `manifest.json`,
 `structure.ndjson`, and an `AGENTS.block.md` merged into your `AGENTS.md`. The public
 variant contains file paths, structure, and an edge-derivable blast radius only, never your
 source and never the scoring weights.

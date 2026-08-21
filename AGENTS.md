@@ -1,8 +1,8 @@
-<!-- spiderbrain:start v=1 fp=690da56ebc9813a3 commit=4738ebe62052d0ae65fc9132ad570d91ccb32c22 -->
+<!-- spiderbrain:start v=1 fp=a11a31ca107b8b20 commit=574b4662721da32c0b916c14bccf39401e189221 -->
 ## Repo understanding (SpiderBrain)
 
 This repo carries a committed brain in `.spiderbrain/`: a deterministic, source-free map of its
-structure, dependencies, and blast radius (35 files, 19 edges). Consult it before
+structure, dependencies, and blast radius (36 files, 19 edges). Consult it before
 reading files, to know what matters and what a change reaches.
 
 Fastest use (an MCP server for this repo, no SpiderBrain install, no account):
@@ -25,6 +25,6 @@ The why (decisions, reasoning, always-fresh scores) is the cloud layer. Set SPID
 (get one at https://spiderbrain.ai/dashboard?tab=keys) and any command above also returns fresh
 scores, semantic search, and `sb_why <path>` (the decision behind a file).
 
-Deterministic: this block regenerates byte-identically from commit 4738ebe62052d0ae65fc9132ad570d91ccb32c22 (fingerprint 690da56ebc9813a3).
+Deterministic: this block regenerates byte-identically from commit 574b4662721da32c0b916c14bccf39401e189221 (fingerprint a11a31ca107b8b20).
 Do not hand-edit between the markers.
 <!-- spiderbrain:end -->

@@ -2,7 +2,7 @@
   "name": "spiderbrain",
   "version": "0.2.2",
   "mcpName": "ai.spiderbrain/spiderbrain",
-  "description": "A committed understanding layer for your repo: give it one (create) and read it (blast radius, keystones, MCP server for AI agents). The one command; wraps @spiderbrain/read + @spiderbrain/create.",
+  "description": "A deterministic context layer for your repo, committed beside the code: blast radius, keystones, and an MCP server that gives agents answers with receipts. The one command; wraps @spiderbrain/read + @spiderbrain/create.",
   "type": "module",
   "license": "MIT",
   "author": "Perform Digital Pvt Ltd",
@@ -10,8 +10,8 @@
     "spiderbrain": "bin/spiderbrain.mjs"
   },
   "dependencies": {
-    "@spiderbrain/read": "^0.2.1",
-    "@spiderbrain/create": "^0.2.1"
+    "@spiderbrain/read": "^0.2.2",
+    "@spiderbrain/create": "^0.2.2"
   },
   "engines": {
     "node": ">=18"
